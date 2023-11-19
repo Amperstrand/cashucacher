@@ -9,4 +9,17 @@ services:
       - "3338:3338"
     volumes:
       - .:/app
+      - ./cashu_data:/root/.cashu
+
+  wallet:
+    image: nutshell-wallet
+    container_name: nutshell-wallet
+    ports:
+      - "4448:4448"
+    environment:
+      - MINT_URL=https://8333.space:3338/
+      - API_HOST=0.0.0.0
+    volumes:
+      - ./cashu_data:/root/.cashu
+    command: ["poetry", "run", "cashu", "-d"]
 

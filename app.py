@@ -19,12 +19,21 @@ with open(lnurl_file_path, 'r') as file:
     # Assuming only one row, strip spaces from lnurlws
     lnurl_list = [lnurlw.strip() for lnurlw in next(reader, [])]
 
+# Function to read decrypted cashu note from file
+def read_decrypted_note(offset):
+    file_path = f"/root/.cashu/1_sat_cashu_note_at_offset_{offset}.txt"
+    with open(file_path, 'r') as file:
+        return file.read()
+
 # Index to keep track of the current position
 current_index = 0
 
+
 # Generate encrypted nuts for each lnurlw (dummy implementation, replace with actual encryption)
 encrypted_nuts = [{"index": i, "dummy_ciphertext": f"dummy_ciphertext_{i} which is actually a cashu note encrypted using the key {lnurlw}", 
+                   "plaintext": read_decrypted_note(i),
                    "encryption_key_full": lnurlw, "encryption_key_hint": lnurlw[:-1]} for i, lnurlw in enumerate(lnurl_list)]
+
 
 @app.route('/lnurlw', methods=['GET'])
 def lnurlw():

@@ -2,6 +2,29 @@ import csv
 import os
 from flask import Flask, jsonify, render_template_string
 
+
+
+# use this to encrypt the cashu note
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+#from base64 import urlsafe_b64encode, urlsafe_b64decode
+import hashlib
+import base64
+
+def encrypt_string(message, lnurlw):
+    key = hashlib.sha256(lnurlw.encode('utf-8')).digest()  # This will be a 32-byte key for AES-256, adjust as needed
+    print(key)
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    # Use PKCS#7 padding
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(message.encode('utf-8')) + padder.finalize()
+
+    ct = encryptor.update(padded_data) + encryptor.finalize()
+    return base64.urlsafe_b64encode(ct).decode('utf-8')
+
 app = Flask(__name__)
 
 # Get the absolute path to the LNURLw.csv file
@@ -23,15 +46,21 @@ with open(lnurl_file_path, 'r') as file:
 def read_decrypted_note(offset):
     file_path = f"/root/.cashu/1_sat_cashu_note_at_offset_{offset}.txt"
     with open(file_path, 'r') as file:
-        return file.read()
+        return file.read().strip()
 
 # Index to keep track of the current position
 current_index = 0
 
 
-# Generate encrypted nuts for each lnurlw (dummy implementation, replace with actual encryption)
-encrypted_nuts = [{"index": i, "dummy_ciphertext": f"dummy_ciphertext_{i} which is actually a cashu note encrypted using the key {lnurlw}", 
-                   "plaintext": read_decrypted_note(i),
+                   #"cashu_ciphertext": encrypt_string(read_decrypted_note(i), hashlib.sha256(lnurlw.encode('utf-8')).digest()),
+# Generate encrypted nuts for each lnurlw
+
+#key = hashlib.sha256(lnurlw.encode('utf-8')).digest()  # This will be a 32-byte key for AES-256, adjust as needed
+
+encrypted_nuts = [{"index": i,
+                   "cashu_plaintext": read_decrypted_note(i),
+                   "cashu_ciphertext": encrypt_string(read_decrypted_note(i), lnurlw),
+                   "key" : hashlib.sha256(lnurlw.encode('utf-8')).hexdigest(),
                    "encryption_key_full": lnurlw, "encryption_key_hint": lnurlw[:-1]} for i, lnurlw in enumerate(lnurl_list)]
 
 

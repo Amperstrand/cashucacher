@@ -160,20 +160,61 @@ def get_encryptednut_by_index(index):
 # Routes for debugging
 @app.route('/debug', methods=['GET'])
 def debug():
-    debug_info = [{"index": i, "lnurlw": lnurlw, "encrypted_nut": encrypted_nuts[i]} for i, lnurlw in enumerate(lnurl_list)]
+    debug_info = [
+        {
+            "index": i,
+            "lnurlw": lnurlw,
+            "partial_lnurlw": lnurlw[:-1],
+            "cashu_plaintext": read_decrypted_note(i),
+            "cashu_ciphertext": encrypted_nuts[i]["cashu_ciphertext"]
+        } for i, lnurlw in enumerate(lnurl_list)
+    ]
     return jsonify(debug_info)
 
+# New endpoint to show debug information for a specific index
 @app.route('/debug/<int:index>', methods=['GET'])
 def debug_index(index):
     if 0 <= index < len(lnurl_list):
         debug_info = {
-            "encrypted_nut": encrypted_nuts[index],
             "index": index,
-            "lnurlw": lnurl_list[index]
+            "lnurlw": lnurl_list[index],
+            "partial_lnurlw": lnurl_list[index][:-1],
+            "cashu_plaintext": read_decrypted_note(index),
+            "cashu_ciphertext": encrypted_nuts[index]["cashu_ciphertext"]
         }
         return jsonify(debug_info)
     else:
         return jsonify({"error": "Invalid index"}), 404
+
+# New endpoint to show all encrypted Cashu information as a list
+@app.route('/encrypted_cashu/', methods=['GET'])
+def all_encrypted_cashu():
+    all_encrypted_info = []
+    for index in range(len(lnurl_list)):
+        encrypted_info = {
+            "index": index,
+            "cashu_ciphertext": encrypted_nuts[index]["cashu_ciphertext"],
+            "partial_lnurlw": lnurl_list[index][:-1]
+        }
+        all_encrypted_info.append(encrypted_info)
+
+    return jsonify(all_encrypted_info)
+
+# New endpoint to show encrypted Cashu information for a specific index
+@app.route('/encrypted_cashu/<int:index>', methods=['GET'])
+def encrypted_cashu_index(index):
+    if 0 <= index < len(lnurl_list):
+        encrypted_info = {
+            "index": index,
+            "cashu_ciphertext": encrypted_nuts[index]["cashu_ciphertext"],
+            "partial_lnurlw": lnurl_list[index][:-1]
+        }
+        return jsonify(encrypted_info)
+    else:
+        return jsonify({"error": "Invalid index"}), 404
+
+
+
 
 # Route for the main endpoint '/'
 @app.route('/', methods=['GET'])

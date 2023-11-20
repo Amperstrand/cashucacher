@@ -3,55 +3,80 @@ import os
 from flask import Flask, jsonify, render_template_string
 
 import hashlib
+import base64
+import itertools
+
+
 
 
 
 # use this to encrypt the cashu note
+
+from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import padding
 from base64 import b64encode, b64decode
+import hashlib
 
-def pad_data(data):
-    padder = padding.PKCS7(128).padder()
-    padded_data = padder.update(data) + padder.finalize()
-    return padded_data
+# Function to compute SHA-256 hash
+def sha256(input):
+    return hashlib.sha256(input.encode()).hexdigest()
 
-def unpad_data(data):
-    unpadder = padding.PKCS7(128).unpadder()
-    unpadded_data = unpadder.update(data) + unpadder.finalize()
-    return unpadded_data
+# Encryption function with PKCS7 padding
+def encrypt_data(text, key):
+    print("encrypting: " + text)
+    print("with this key (string):")
+    print (key)
+    print("sha256")
+    print(sha256(key))
+    key = sha256(key)[:32]  # Limit key size to 32 bytes (256 bits)
+    print(key)
 
-def encrypt_data(data, secret_key):
-    #key = secret_key.encode('utf-8')[:32]  # AES-256 key size
-    key = secret_key.encode('utf-8')[:32]
-    data = data.encode('utf-8')
+    # Create a cipher object with AES and ECB mode
+    cipher = Cipher(algorithms.AES(key.encode()), modes.ECB(), backend=default_backend())
 
-    # Add padding to the data
-    padded_data = pad_data(data)
+    # Create a padder using PKCS7
+    padder = padding.PKCS7(algorithms.AES.block_size).padder()
 
-    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    # Encrypt the padded data
     encryptor = cipher.encryptor()
-    encrypted_data = encryptor.update(padded_data) + encryptor.finalize()
+    padded_data = padder.update(text.encode()) + padder.finalize()
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
-    return b64encode(encrypted_data).decode('utf-8')
+    return b64encode(ciphertext).decode()
 
-def decrypt_data(encrypted_data, secret_key):
-    key = secret_key.encode('utf-8')[:32]  # AES-256 key size
-    encrypted_data = b64decode(encrypted_data)
+# Decryption function with PKCS7 unpadding
+def decrypt_data(ciphertext, key):
+    key = sha256(key)[:32]  # Limit key size to 32 bytes (256 bits)
 
-    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    # Create a cipher object with AES and ECB mode
+    cipher = Cipher(algorithms.AES(key.encode()), modes.ECB(), backend=default_backend())
+
+    # Decrypt the data
     decryptor = cipher.decryptor()
-    decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
+    decrypted_data = decryptor.update(b64decode(ciphertext)) + decryptor.finalize()
 
-    # Remove padding from the decrypted data
-    unpadded_data = unpad_data(decrypted_data)
+    # Create an unpadder using PKCS7
+    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
 
-    return unpadded_data.decode('utf-8')
+    # Unpad the decrypted data
+    original_text = unpadder.update(decrypted_data) + unpadder.finalize()
+
+    return original_text.decode()
+
+# Example usage
+secret_key = "your_secret_key"
+plain_text = "Hello, World!"
+
+encrypted_text = encrypt_data(plain_text, secret_key)
+print("Encrypted:", encrypted_text)
+
+decrypted_text = decrypt_data(encrypted_text, secret_key)
+print("Decrypted:", decrypted_text)
 
 print(encrypt_data("cashuAeyJ0b2tlbiI6IFt7InByb29mcyI6IFt7ImlkIjogIkkyeU4raVJZZmt6VCIsICJhbW91bnQiOiAxLCAic2VjcmV0IjogIjQzZDgyMGY4NDViNjMyZmNmYThlNjk2YTgzMDRhZTZmMmYwMjE5OWM3Yzg3MTg5YTY3YTA4NzIwZTFkNTlkNzQiLCAiQyI6ICIwM2M5OTg1ZmM0ODIyM2IyMTkwMmU0NjBjN2QxMzcxMDc5MzhjYmU2ZGJiYTVjYmUwYWFkZjNiZDAzNmQ4NTg0M2UifV0sICJtaW50IjogImh0dHBzOi8vODMzMy5zcGFjZTozMzM4LyJ9XX0=", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
 
-print(decrypt_data("84qShBFxgmuqNSL6IVCJEhz4kIKvQwbaFJ7ZkrOGfhtVk8qz677FGFBQ08mm+US+EpTBLJDPWlNNts1cGcrdONMgHOlIAcnTI2nPUB9ZBNFfpdLZiUtxOIUvnuCddGIKUHKupu4EGrv1UC8pO0faZCSGeaf+SsYtJZi1PBiaEzMjoRMbujo/ALYElnCH9lnv+1JQkGvVyw0/nqNalqc4pVeMnVDT+bqdNVJE8jCuwCVs+vEVo2nZSHqnIsTUibQz3WGGCDGN1M7JaER9n86+4qXIdSBsgZTa+9a+pVMbc1SWd/54sAqdULUWQ5MUZAfpkFEO6w4dNylm1MDS47RcORk4tNDhUMvP4Sbgcg6QBoN79l6On4r1qh8OD0wXfB485dpu0f3azTEFizzBs0a0geraxj0kYsU0YFBSCKX70drCnO7mcgkKDOCaJE2LaH4iAagYRe4tSXt502/zbdOeOQ==", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
+#print(decrypt_data("84qShBFxgmuqNSL6IVCJEhz4kIKvQwbaFJ7ZkrOGfhtVk8qz677FGFBQ08mm+US+EpTBLJDPWlNNts1cGcrdONMgHOlIAcnTI2nPUB9ZBNFfpdLZiUtxOIUvnuCddGIKUHKupu4EGrv1UC8pO0faZCSGeaf+SsYtJZi1PBiaEzMjoRMbujo/ALYElnCH9lnv+1JQkGvVyw0/nqNalqc4pVeMnVDT+bqdNVJE8jCuwCVs+vEVo2nZSHqnIsTUibQz3WGGCDGN1M7JaER9n86+4qXIdSBsgZTa+9a+pVMbc1SWd/54sAqdULUWQ5MUZAfpkFEO6w4dNylm1MDS47RcORk4tNDhUMvP4Sbgcg6QBoN79l6On4r1qh8OD0wXfB485dpu0f3azTEFizzBs0a0geraxj0kYsU0YFBSCKX70drCnO7mcgkKDOCaJE2LaH4iAagYRe4tSXt502/zbdOeOQ==", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
 
 app = Flask(__name__)
 

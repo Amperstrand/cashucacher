@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Encryption and Decryption</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -19,18 +19,18 @@
     <label for="encryptionKey">Encryption Key:</label>
     <input type="text" id="encryptionKey" value="LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0">
     <br>
-    <button type="submit">Encrypt</button>
+    <button type="button" onclick="encryptAndShowResult()">Encrypt</button>
   </form>
 
   <h2>Decrypt</h2>
   <form onsubmit="decryptAndShowResult(); return false;">
     <label for="decryptInput">Ciphertext:</label>
-    <textarea id="decryptInput" rows="4" cols="50"></textarea>
+    <textarea id="decryptInput" rows="4" cols="50">CF4/NQPxqsw4+mCPPgA9+RkfICCLdvU4xS5SFnjUPG8xG3AEv5yVw3kFLItKpbP1/h6Yf7nJt+nEdHHQ7h4ZJIWeB6iDka+Nr9fQRxOkZid4R+mwkywomq2JsfcvySSjuAI8ZU2IZANBZVxrg9E596C1V8EOlH4GCAyXMKdr2viSoOns/1ejOu/yPRjXlkYLllIZIh5uc822D5ghUU9GilYlCYfa7BeDBT8m9ki6Eswu7Nr4HWbFHDjMDUnE+VD2xZdpYIXt6Bnm4ip4MbaSAX/fA8J6tcmmOhkn0x//oOkhFHBfEK/b2vB+Ph9zGIWKpIk9WIH1q/5Fdjm579Tq5zahP65jDK5C7pryX260o/THORtBCJ0/2R2WL/qPqPx5pFMGFshc2YcgmWCk/grcvvuf3nyZdWbF/K5NjicPAz9G4oazHvKrpbC0mOiIaKxmASUDbVZ7lqzjyjOYsrYP3Q==</textarea>
     <br>
     <label for="decryptionKey">Decryption Key:</label>
     <input type="text" id="decryptionKey" value="LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0">
     <br>
-    <button type="submit">Decrypt</button>
+    <button type="button" onclick="decryptAndShowResult()">Decrypt</button>
   </form>
 
   <h2>Result</h2>

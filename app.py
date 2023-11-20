@@ -11,72 +11,74 @@ import itertools
 
 
 # use this to encrypt the cashu note
-
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from base64 import b64encode, b64decode
-import hashlib
 
-# Function to compute SHA-256 hash
-def sha256(input):
-    return hashlib.sha256(input.encode()).hexdigest()
+def sha256(input_str):
+    digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+    digest.update(input_str.encode('utf-8'))
+    return digest.finalize()
 
-# Encryption function with PKCS7 padding
 def encrypt_data(text, key):
-    print("encrypting: " + text)
-    print("with this key (string):")
-    print (key)
-    print("sha256")
-    print(sha256(key))
-    key = sha256(key)[:32]  # Limit key size to 32 bytes (256 bits)
+    print("Encrypting:", text)
+    print("With this key (string):")
+    print(key)
+    print("SHA256:")
+    key_hash = sha256(key)
+
+    #not this:
+    ## Limit key size to 32 bytes (256 bits)
+    #key = key_hash[:32]
+    #print('2')
+    #print(key.hex())
+
+    #this works:
+    #key=bytes.fromhex("198a1a4ee777d059d5f8e255deaa7f17")
+    #print(key_hash[:16])
+    key=key_hash[:16]
     print(key)
 
-    # Create a cipher object with AES and ECB mode
-    cipher = Cipher(algorithms.AES(key.encode()), modes.ECB(), backend=default_backend())
 
-    # Create a padder using PKCS7
-    padder = padding.PKCS7(algorithms.AES.block_size).padder()
+    # Pad the data using PKCS7
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(text.encode('utf-8')) + padder.finalize()
 
-    # Encrypt the padded data
+    # Encrypt the data using AES with ECB mode
+
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
     encryptor = cipher.encryptor()
-    padded_data = padder.update(text.encode()) + padder.finalize()
     ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
-    return b64encode(ciphertext).decode()
+    return b64encode(ciphertext).decode('utf-8')
 
-# Decryption function with PKCS7 unpadding
-def decrypt_data(ciphertext, key):
-    key = sha256(key)[:32]  # Limit key size to 32 bytes (256 bits)
+def decrypt_data(encrypted_text, key):
+    print("Decrypting:", encrypted_text)
+    print("With this key (string):")
+    print(key)
+    print("SHA256:")
+    key_hash = sha256(key)
+    key = key_hash[:16]
+    print(key)
 
-    # Create a cipher object with AES and ECB mode
-    cipher = Cipher(algorithms.AES(key.encode()), modes.ECB(), backend=default_backend())
+    # Decode the Base64 encoded ciphertext
+    ciphertext = b64decode(encrypted_text.encode('utf-8'))
 
-    # Decrypt the data
+    # Decrypt the data using AES with ECB mode
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
     decryptor = cipher.decryptor()
-    decrypted_data = decryptor.update(b64decode(ciphertext)) + decryptor.finalize()
+    decrypted_padded_data = decryptor.update(ciphertext) + decryptor.finalize()
 
-    # Create an unpadder using PKCS7
-    unpadder = padding.PKCS7(algorithms.AES.block_size).unpadder()
+    # Unpad the data using PKCS7
+    unpadder = padding.PKCS7(128).unpadder()
+    original_text = unpadder.update(decrypted_padded_data) + unpadder.finalize()
 
-    # Unpad the decrypted data
-    original_text = unpadder.update(decrypted_data) + unpadder.finalize()
-
-    return original_text.decode()
-
-# Example usage
-secret_key = "your_secret_key"
-plain_text = "Hello, World!"
-
-encrypted_text = encrypt_data(plain_text, secret_key)
-print("Encrypted:", encrypted_text)
-
-decrypted_text = decrypt_data(encrypted_text, secret_key)
-print("Decrypted:", decrypted_text)
+    return original_text.decode('utf-8')
 
 print(encrypt_data("cashuAeyJ0b2tlbiI6IFt7InByb29mcyI6IFt7ImlkIjogIkkyeU4raVJZZmt6VCIsICJhbW91bnQiOiAxLCAic2VjcmV0IjogIjQzZDgyMGY4NDViNjMyZmNmYThlNjk2YTgzMDRhZTZmMmYwMjE5OWM3Yzg3MTg5YTY3YTA4NzIwZTFkNTlkNzQiLCAiQyI6ICIwM2M5OTg1ZmM0ODIyM2IyMTkwMmU0NjBjN2QxMzcxMDc5MzhjYmU2ZGJiYTVjYmUwYWFkZjNiZDAzNmQ4NTg0M2UifV0sICJtaW50IjogImh0dHBzOi8vODMzMy5zcGFjZTozMzM4LyJ9XX0=", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
 
-#print(decrypt_data("84qShBFxgmuqNSL6IVCJEhz4kIKvQwbaFJ7ZkrOGfhtVk8qz677FGFBQ08mm+US+EpTBLJDPWlNNts1cGcrdONMgHOlIAcnTI2nPUB9ZBNFfpdLZiUtxOIUvnuCddGIKUHKupu4EGrv1UC8pO0faZCSGeaf+SsYtJZi1PBiaEzMjoRMbujo/ALYElnCH9lnv+1JQkGvVyw0/nqNalqc4pVeMnVDT+bqdNVJE8jCuwCVs+vEVo2nZSHqnIsTUibQz3WGGCDGN1M7JaER9n86+4qXIdSBsgZTa+9a+pVMbc1SWd/54sAqdULUWQ5MUZAfpkFEO6w4dNylm1MDS47RcORk4tNDhUMvP4Sbgcg6QBoN79l6On4r1qh8OD0wXfB485dpu0f3azTEFizzBs0a0geraxj0kYsU0YFBSCKX70drCnO7mcgkKDOCaJE2LaH4iAagYRe4tSXt502/zbdOeOQ==", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
+print(decrypt_data("CF4/NQPxqsw4+mCPPgA9+RkfICCLdvU4xS5SFnjUPG8xG3AEv5yVw3kFLItKpbP1/h6Yf7nJt+nEdHHQ7h4ZJIWeB6iDka+Nr9fQRxOkZid4R+mwkywomq2JsfcvySSjuAI8ZU2IZANBZVxrg9E596C1V8EOlH4GCAyXMKdr2viSoOns/1ejOu/yPRjXlkYLllIZIh5uc822D5ghUU9GilYlCYfa7BeDBT8m9ki6Eswu7Nr4HWbFHDjMDUnE+VD2xZdpYIXt6Bnm4ip4MbaSAX/fA8J6tcmmOhkn0x//oOkhFHBfEK/b2vB+Ph9zGIWKpIk9WIH1q/5Fdjm579Tq5zahP65jDK5C7pryX260o/THORtBCJ0/2R2WL/qPqPx5pFMGFshc2YcgmWCk/grcvvuf3nyZdWbF/K5NjicPAz9G4oazHvKrpbC0mOiIaKxmASUDbVZ7lqzjyjOYsrYP3Q==", "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7DT5WU6HZ4ZXG35K7MJKDG6HX3T4GEGHW4F59AF8JU2TGSMYV6Z3VD58G625WDQ5ZNJDXDU8ZMRH2K0"))
 
 app = Flask(__name__)
 

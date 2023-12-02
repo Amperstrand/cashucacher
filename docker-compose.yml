@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  cashucache:
+  cashucacher:
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,6 +12,8 @@ services:
       - ./cashu_data:/root/.cashu
     networks:
       - cachucacher
+    depends_on:
+      - wallet
 
   wallet:
     build:

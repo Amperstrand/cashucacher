@@ -100,8 +100,11 @@ with open(lnurl_file_path, 'r') as file:
 # Function to read decrypted cashu note from file
 def read_decrypted_note(offset):
     file_path = f"/root/.cashu/1_sat_cashu_note_at_offset_{offset}.txt"
-    with open(file_path, 'r') as file:
-        return file.read().strip()
+    try:
+        with open(file_path, 'r') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        print(f"No cashu note found: {file_path}. make sure that it exists")
 
 # Index to keep track of the current position
 current_index = 0

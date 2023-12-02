@@ -57,6 +57,8 @@ def main():
     print("Decrypted cashu note:")
     print()
     print(decrypted_message)
+    assert decrypted_message.startswith("cashu"), "Decrypted text does not start with 'cashu'"
+    assert decrypted_message == json_data.get("cashu_plaintext")
 
 if __name__ == "__main__":
     main()

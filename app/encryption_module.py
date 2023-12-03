@@ -11,10 +11,7 @@ def sha256(input_str):
 
 def encrypt_data(text, key):
     print("Encrypting:", text)
-    print("With this key (string):")
-    print(key)
-    print("SHA256:")
-    key_hash = sha256(key)
+    print("With this key (string):" + key)
 
     #not this:
     ## Limit key size to 32 bytes (256 bits)
@@ -25,6 +22,8 @@ def encrypt_data(text, key):
     #this works:
     #key=bytes.fromhex("198a1a4ee777d059d5f8e255deaa7f17")
     #print(key_hash[:16])
+
+    key_hash = sha256(key)
     key=key_hash[:16]
     print(key)
 

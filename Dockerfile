@@ -15,4 +15,4 @@ COPY . /app/
 EXPOSE 3338
 
 # Command to run the Flask application
-CMD ["python", "-m", "app"]
+CMD ["python", "run.py"]

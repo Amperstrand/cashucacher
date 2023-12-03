@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, abort
 from .encryption_module import encrypt_data, decrypt_data
 from .utils import load_lnurl_list, read_decrypted_note
 
@@ -18,7 +18,7 @@ class EncryptedNut:
         self.partial_lnurlw = lnurlw[:-characters_to_remove]
 
     def to_json(self):
-        return {"index": self.index, "cashu_ciphertext": self.cashu_ciphertext, "lnurlw": self.lnurlw}
+        return {"index": self.index, "cashu_ciphertext": self.cashu_ciphertext, "lnurlw": self.lnurlw, "partial_lnurlw": self.partial_lnurlw}
 
 def create_encrypted_nuts(lnurl_list):
     encrypted_nuts = [
@@ -50,7 +50,12 @@ def lnurlw():
 @lnurl_routes.route('/lnurlw/<int:index>', methods=['GET'])
 def get_lnurlw_by_index(index):
     if 0 <= index < len(lnurl_list):
-        lnurlw = lnurl_list[index]
-        return jsonify({"index": index, "lnurlw": lnurlw})
+        cachedcachu = encrypted_nuts[index]
+        try {
+            next_cachedcachu = encrypted_nuts[index+1]
+        } catch (e) {
+            next_cachedcachu = None
+        }
+        return jsonify({"index": index, "cachedcachu": cachedcachu.to_json(), "next_cachedcashu": next_cachedcachu.to_json()})
     else:
-        abort(404, description="Index out of range")
+        return jsonify({})

@@ -1,0 +1,1 @@
+LNURL_FILE_PATH = "./LNURLw.csv"

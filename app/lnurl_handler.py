@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from .encryption_module import encrypt_data, decrypt_data
 from .utils import load_lnurl_list, read_decrypted_note
 
@@ -51,11 +51,12 @@ def lnurlw():
 
 @lnurl_routes.route('/lnurlw/<int:index>', methods=['GET'])
 def get_lnurlw_by_index(index):
+    num_items = request.args.get('num_items', default=1, type=int)
+    
     if 0 <= index < len(lnurl_list):
-        cachedcachu = encrypted_nuts[index]
-        next_cachedcachu = encrypted_nuts[index + 1] if index + 1 < len(encrypted_nuts) else None
+        end_index = min(index + num_items, len(encrypted_nuts))
+        cachedcachu_list = [encrypted_nuts[i] for i in range(index, end_index)]
 
-        return jsonify({"index": index, "cachedcachu": cachedcachu.to_json(), "next_cachedcashu": next_cachedcachu.to_json() if next_cachedcachu else None})
+        return jsonify({"index": index, "cachedcachu_list": [c.to_json() for c in cachedcachu_list]})
     else:
         return jsonify({"message": "Invalid index."}), 404
-

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, render_template, abort
+from flask import Blueprint, jsonify
 from .encryption_module import encrypt_data, decrypt_data
 from .utils import load_lnurl_list, read_decrypted_note
 
@@ -35,27 +35,27 @@ encrypted_nuts = create_encrypted_nuts(lnurl_list)
 @lnurl_routes.route('/lnurlw', methods=['GET'])
 def lnurlw():
     global current_index
-    current_lnurlw = lnurl_list[current_index] if lnurl_list else None
-    current_lnurlw = {"index": current_index, "lnurlw": current_lnurlw}
+    if current_index >= len(lnurl_list):
+        return jsonify({"message": "No more lnurlw entries."}), 404
+
+    current_lnurlw = lnurl_list[current_index]
+    current_lnurlw_response = {"index": current_index, "lnurlw": current_lnurlw}
 
     encrypted_nut_urls = [
         {"index": i, "partial_lnurlw": lnurl_list[i][:-1], "link": f"/encryptednut/{i}"} for i in range(current_index, len(lnurl_list))
     ]
 
-    if current_index < len(lnurl_list) - 1:
-        current_index += 1
+    current_index += 1
 
-    return jsonify({"current_lnurlw": current_lnurlw, "encrypted_nut_urls": encrypted_nut_urls, "encrypted_nuts": [nut.to_json() for nut in encrypted_nuts]})
+    return jsonify({"current_lnurlw": current_lnurlw_response, "encrypted_nut_urls": encrypted_nut_urls, "encrypted_nuts": [nut.to_json() for nut in encrypted_nuts]})
 
 @lnurl_routes.route('/lnurlw/<int:index>', methods=['GET'])
 def get_lnurlw_by_index(index):
     if 0 <= index < len(lnurl_list):
         cachedcachu = encrypted_nuts[index]
-        try {
-            next_cachedcachu = encrypted_nuts[index+1]
-        } catch (e) {
-            next_cachedcachu = None
-        }
-        return jsonify({"index": index, "cachedcachu": cachedcachu.to_json(), "next_cachedcashu": next_cachedcachu.to_json()})
+        next_cachedcachu = encrypted_nuts[index + 1] if index + 1 < len(encrypted_nuts) else None
+
+        return jsonify({"index": index, "cachedcachu": cachedcachu.to_json(), "next_cachedcashu": next_cachedcachu.to_json() if next_cachedcachu else None})
     else:
-        return jsonify({})
+        return jsonify({"message": "Invalid index."}), 404
+

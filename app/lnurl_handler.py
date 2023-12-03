@@ -38,25 +38,6 @@ def create_encrypted_nuts(lnurl_list):
 
 encrypted_nuts = create_encrypted_nuts(lnurl_list)
 
-@lnurl_routes.route('/lnurlw', methods=['GET'])
-def get_all_lnurlw():
-    global current_index
-    print(f"current_index: {current_index}")
-    debug = request.args.get('debug', default=False, type=bool)
-
-    # Fetch all lnurlw items
-    lnurlw_list = []
-    end_index=len(encrypted_nuts)
-    for index in range(current_index, end_index):
-        current_lnurlw = lnurl_list[index]
-        cachedcachu_list = [encrypted_nuts[i] for i in range(index, end_index)]
-        response_data = {
-            "index": index,
-            "current_lnurlw": current_lnurlw,
-            "cachedcachu_list": [c.to_json(ciphertext_only=debug) for c in cachedcachu_list]
-        }
-    current_index += 1
-    return json.dumps(response_data, separators=(',', ':'), sort_keys=False, indent=4)
 
 @lnurl_routes.route('/lnurlw/<int:index>', methods=['GET'])
 def get_lnurlw_by_index(index):
@@ -78,3 +59,24 @@ def get_lnurlw_by_index(index):
 
     else:
         return jsonify({"message": "Invalid index."}), 404
+
+@lnurl_routes.route('/lnurlw', methods=['GET'])
+def get_all_lnurlw():
+    global current_index
+    print(f"current_index: {current_index}")
+    debug = request.args.get('debug', default=False, type=bool)
+
+    # Fetch all lnurlw items
+    lnurlw_list = []
+    end_index=len(encrypted_nuts)
+    response_data=[]
+    for index in range(current_index, end_index):
+        current_lnurlw = lnurl_list[index]
+        cachedcachu_list = [encrypted_nuts[i] for i in range(index, end_index)]
+        response_data += [{
+            "index": index,
+            "current_lnurlw": current_lnurlw,
+            "cachedcachu_list": [c.to_json(ciphertext_only=debug) for c in cachedcachu_list]
+        }]
+    current_index += 1
+    return json.dumps(response_data, separators=(',', ':'), sort_keys=False, indent=4)

@@ -46,3 +46,11 @@ def lnurlw():
         current_index += 1
 
     return jsonify({"current_lnurlw": current_lnurlw, "encrypted_nut_urls": encrypted_nut_urls, "encrypted_nuts": [nut.to_json() for nut in encrypted_nuts]})
+
+@lnurl_routes.route('/lnurlw/<int:index>', methods=['GET'])
+def get_lnurlw_by_index(index):
+    if 0 <= index < len(lnurl_list):
+        lnurlw = lnurl_list[index]
+        return jsonify({"index": index, "lnurlw": lnurlw})
+    else:
+        abort(404, description="Index out of range")

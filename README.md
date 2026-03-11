@@ -1,12 +1,51 @@
 # Cashucacher
 
-**Hide your nuts.** A proof-of-concept for encrypting Cashu ecash tokens using LNURL-withdraw codes as encryption keys.
+**Lightning as a key distribution mechanism.**
 
-## What It Does
+Encrypt Cashu ecash tokens using LNURL-withdraw codes as keys, then use Lightning to deliver those keys.
 
-Cashucacher encrypts Cashu ecash tokens (V1) using AES-128-ECB with a key derived from an LNURL-withdraw code. The encrypted tokens can be served publicly alongside their LNURLw "keys" — only someone who knows to use the LNURLw as the decryption key can recover the Cashu token.
+## The Core Idea
 
-Use case: Distribute encrypted Cashu tokens "in plain sight" where the decryption keys are also withdraw codes.
+Consider this scenario:
+- You want to give someone a Cashu token worth **1000 sats**
+- But they're offline, or you want to schedule the delivery
+- You publish an **encrypted token** publicly (anyone can see it)
+- When ready, you send them an **LNURLw worth 1 sat** via Lightning
+- That 1 sat LNURLw is **ALSO the decryption key** for the 1000 sat Cashu token
+
+The "aha" moment: **LNURLw codes are human-readable strings that can be transmitted over Lightning**. Lightning becomes the key distribution channel.
+
+## Why This Is Interesting
+
+| Aspect | Description |
+|--------|-------------|
+| **Steganographic key** | An LNURLw looks like a withdraw code (which it is!) but it's also a decryption key |
+| **Lightning as notification** | Sending 1 sat over Lightning signals "your key is ready" |
+| **Asymmetric value** | The LNURLw might be worth 1 sat, but it unlocks 1000 sats |
+| **No new infrastructure** | Uses existing Lightning/LNURL tooling |
+
+## Use Cases
+
+### 1. Scheduled Gifting
+Pre-encrypt tokens and publish them. On someone's birthday, send the LNURLw keys via Lightning.
+
+### 2. Offline Recipients
+Encrypt tokens now, deliver keys later when recipient is online.
+
+### 3. Dead Man's Switch
+Publish encrypted tokens. If something happens to you, trusted parties receive the LNURLw keys.
+
+### 4. Deniable Value Storage
+Store "encrypted data" publicly. Only those who receive Lightning payments know it's Cashu.
+
+### 5. Multi-Party Distribution
+Give each person a different LNURLw. Each code decrypts a different token from the same public pool.
+
+## What This Is Not
+
+- **Not a wallet** - This is a key distribution mechanism, not a Cashu wallet
+- **Not production-ready** - AES-ECB has known weaknesses (see Security Considerations)
+- **Not for high-value tokens** - The security model assumes low-value experimentation
 
 ## Quick Start
 

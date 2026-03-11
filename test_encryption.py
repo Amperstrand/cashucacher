@@ -1,5 +1,5 @@
 import unittest
-from encryption_module import encrypt_data, decrypt_data
+from app.encryption_module import encrypt_data, decrypt_data
 
 class EncryptionTest(unittest.TestCase):
 

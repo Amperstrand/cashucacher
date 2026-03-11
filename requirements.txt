@@ -1,3 +1,4 @@
-Flask
-Werkzeug
-cryptography
+# Pinned dependencies for reproducibility
+Flask==3.0.3
+Werkzeug==3.0.4
+cryptography==43.0.3

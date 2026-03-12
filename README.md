@@ -44,7 +44,7 @@ Give each person a different LNURLw. Each code decrypts a different token from t
 ## What This Is Not
 
 - **Not a wallet** - This is a key distribution mechanism, not a Cashu wallet
-- **Not production-ready** - AES-ECB has known weaknesses (see Security Considerations)
+- **Not production-ready** - Proof-of-concept for exploring offline payment concepts
 - **Not for high-value tokens** - The security model assumes low-value experimentation
 
 ## Quick Start
@@ -134,11 +134,12 @@ cashucacher/
 ├── app/
 │   ├── __init__.py        # Flask app setup
 │   ├── lnurl_handler.py   # API routes
-│   ├── encryption_module.py  # AES encryption
+│   ├── encryption_module.py  # AES-256-GCM encryption
+│   ├── security_utils.py   # Cryptographic utilities
 │   ├── utils.py           # File/CSV utilities
 │   └── config.py          # Configuration
 ├── decrypt.py             # CLI decryption tool
-├── test_encryption.py     # Unit tests
+├── tests/                # Unit tests
 ├── LNURLw.csv             # LNURL-withdraw codes
 ├── cashu_data/            # Cashu token files
 ├── docker-compose.yml     # Docker orchestration
@@ -149,27 +150,39 @@ cashucacher/
 
 ```bash
 # In Docker (recommended, has correct file paths)
-docker-compose run cashucacher python -m pytest test_encryption.py -v
+docker-compose run cashucacher python -m pytest tests/test_encryption.py -v
 
 # Locally (requires cashu notes in /root/.cashu/)
 source .venv/bin/activate
-PYTHONPATH=. python -m pytest test_encryption.py -v
+PYTHONPATH=. python -m pytest tests/test_encryption.py -v
 ```
 
 ## Security Considerations
 
-⚠️ **This is a proof-of-concept. Not recommended for production use.**
+⚠️ **This is a proof-of-concept. Not recommended for high-value tokens.**
 
-1. **AES-ECB mode**: The encryption uses AES-128-ECB, which is not semantically secure. Consider upgrading to AES-GCM for production.
+### Encryption (Updated March 2025)
 
-2. **Key derivation**: Keys are derived by taking the first 16 bytes of SHA256(LNURLw). This is deterministic but not standard KDF.
+The project now uses **AES-256-GCM** with **PBKDF2-HMAC-SHA256** key derivation:
 
-3. **No authentication**: The API has no authentication — anyone can query all encrypted notes.
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| **Algorithm** | AES-256-GCM | Authenticated encryption (confidentiality + integrity) |
+| **Key Derivation** | PBKDF2-HMAC-SHA256 | Prevents brute force attacks |
+| **Iterations** | 100,000 | NIST-recommended work factor |
+| **Salt** | 32 bytes random | Prevents rainbow table attacks |
+| **Nonce** | 12 bytes random | Prevents replay attacks |
+| **Tag** | 16 bytes GMAC | Ensures data integrity |
 
-4. **LNURLw exposure**: The LNURLw codes (which are the decryption keys) are returned in the API response. Security through obscurity.
+### Remaining Considerations
 
-5. **Cashu note storage**: Notes are stored as plain text files. Ensure proper file permissions.
+1. **No authentication**: The API has no authentication — anyone can query all encrypted notes.
 
+2. **LNURLw exposure**: The LNURLw codes (which are the decryption keys) are returned in the API response. Security through obscurity.
+
+3. **Cashu note storage**: Notes are stored as plain text files. Ensure proper file permissions.
+
+4. **Key strength**: Security depends on the entropy of LNURLw codes. Use unique, unpredictable codes.
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
